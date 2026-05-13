@@ -72,14 +72,24 @@ export const register = createAsyncThunk<
   }
 );
 
-export const logout = createAsyncThunk('auth/logout', async () => {
-  await axios.post(`${API_BASE_URL}/api/users/logout`, {}, { withCredentials: true });
-  
-  // Remove user data from localStorage on logout
-  localStorage.removeItem('user');
-  
-  return null;
-});
+export const logout = createAsyncThunk<null, void, { rejectValue: string }>(
+  'auth/logout',
+  async (_, thunkAPI) => {
+    try {
+      await axios.post(`${API_BASE_URL}/api/users/logout`, {}, { withCredentials: true });
+      
+      // Remove user data from localStorage on logout
+      localStorage.removeItem('user');
+      
+      return null;
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message: string }>;
+      return thunkAPI.rejectWithValue(
+        axiosError.response?.data?.message || axiosError.message || 'Logout failed'
+      );
+    }
+  }
+);
 
 export const updateProfile = createAsyncThunk<
   User,

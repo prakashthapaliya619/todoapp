@@ -62,15 +62,19 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   const taskData = { title, description, priority, dueDate, status };
 
-  if (task) {
-    // Update existing task
-    await dispatch(updateTask({ id: task._id, task: taskData }));
-  } else {
-    // Create new task
-    await dispatch(createTask(taskData));
+  try {
+    if (task) {
+      // Update existing task
+      await dispatch(updateTask({ id: task._id, task: taskData })).unwrap();
+    } else {
+      // Create new task
+      await dispatch(createTask(taskData)).unwrap();
+    }
+    onClose(); // Close modal after successful submission
+  } catch (error) {
+    const errorMessage = typeof error === 'string' ? error : 'Failed to save task';
+    alert(errorMessage);
   }
-
-  onClose(); // Close modal after submission
 };
 
 
