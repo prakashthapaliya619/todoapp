@@ -11,7 +11,7 @@ import Profile from "./pages/Profile";
 function App() {
   return (
     <Provider store={store}>
-      <Router>
+      <Router basename="/todoapp">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} /> 

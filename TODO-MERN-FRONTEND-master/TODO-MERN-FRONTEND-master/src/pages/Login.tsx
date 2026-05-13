@@ -29,24 +29,11 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      const result = await dispatch(login({ email, password }));
-      if (login.fulfilled.match(result)) {
-        navigate('/');  // Navigate on successful login
-      } else {
-        // If login fails, set the error message
-        setErrorMessage('Invalid credentials');
-      }
-    } catch (err) {
-      // Type the error as AxiosError<ErrorResponse>
-      const axiosError = err as AxiosError<ErrorResponse>;
-
-      // Now TypeScript knows that axiosError.response.data.message exists
-      if (axiosError.response?.data?.message === 'User already exists') {
-        setErrorMessage('User already exists');
-      } else {
-        setErrorMessage('An error occurred. Please try again.');
-      }
+    const result = await dispatch(login({ email, password }));
+    if (login.fulfilled.match(result)) {
+      navigate('/');
+    } else if (login.rejected.match(result)) {
+      setErrorMessage(result.payload || result.error.message || 'Invalid credentials');
     }
   };
 

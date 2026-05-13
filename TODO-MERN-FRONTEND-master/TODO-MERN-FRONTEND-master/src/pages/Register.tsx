@@ -31,14 +31,11 @@ interface ErrorResponse {
       return;
     }
 
-    try {
-      const result = await dispatch(register({ name, email, password }));
-      if (register.fulfilled.match(result)) {
-        navigate('/');
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError<ErrorResponse>; // Correct error typing
-      setPasswordError(axiosError?.response?.data?.message || 'An error occurred');
+    const result = await dispatch(register({ name, email, password }));
+    if (register.fulfilled.match(result)) {
+      navigate('/');
+    } else if (register.rejected.match(result)) {
+      setPasswordError(result.payload || result.error.message || 'An error occurred');
     }
   };
 

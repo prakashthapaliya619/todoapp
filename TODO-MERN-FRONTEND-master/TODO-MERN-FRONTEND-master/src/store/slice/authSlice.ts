@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:5000';
 
@@ -22,34 +22,53 @@ const initialState: AuthState = {
 };
 
 // Async actions for login, register, logout, and profile update
-export const login = createAsyncThunk(
+export const login = createAsyncThunk<
+  User,
+  { email: string; password: string },
+  { rejectValue: string }
+>(
   'auth/login',
-  async ({ email, password }: { email: string; password: string }) => {
-    const { data } = await axios.post(`${API_BASE_URL}/api/users/login`, {
-      email,
-      password,
-    }, { withCredentials: true });
+  async ({ email, password }, thunkAPI) => {
+    try {
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/users/login`,
+        { email, password },
+        { withCredentials: true }
+      );
 
-    // Persist user data in localStorage on login
-    localStorage.setItem('user', JSON.stringify(data));
-
-    return data;
+      localStorage.setItem('user', JSON.stringify(data));
+      return data;
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message: string }>;
+      return thunkAPI.rejectWithValue(
+        axiosError.response?.data?.message || axiosError.message || 'Login failed'
+      );
+    }
   }
 );
 
-export const register = createAsyncThunk(
+export const register = createAsyncThunk<
+  User,
+  { name: string; email: string; password: string },
+  { rejectValue: string }
+>(
   'auth/register',
-  async ({ name, email, password }: { name: string; email: string; password: string }) => {
-    const { data } = await axios.post(`${API_BASE_URL}/api/users/register`, {
-      name,
-      email,
-      password,
-    }, { withCredentials: true });
+  async ({ name, email, password }, thunkAPI) => {
+    try {
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/users/register`,
+        { name, email, password },
+        { withCredentials: true }
+      );
 
-    // Persist user data in localStorage on registration
-    localStorage.setItem('user', JSON.stringify(data));
-
-    return data;
+      localStorage.setItem('user', JSON.stringify(data));
+      return data;
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message: string }>;
+      return thunkAPI.rejectWithValue(
+        axiosError.response?.data?.message || axiosError.message || 'Registration failed'
+      );
+    }
   }
 );
 
@@ -62,27 +81,28 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   return null;
 });
 
-export const updateProfile = createAsyncThunk(
+export const updateProfile = createAsyncThunk<
+  User,
+  { name: string; currentPassword?: string; newPassword?: string },
+  { rejectValue: string }
+>(
   'auth/updateProfile',
-  async ({ name, currentPassword, newPassword }: { 
-    name: string; 
-    currentPassword?: string; 
-    newPassword?: string; 
-  }) => {
-    const { data } = await axios.put(
-      `${API_BASE_URL}/api/users/profile`,
-      {
-        name,
-        currentPassword,
-        newPassword,
-      },
-      { withCredentials: true }
-    );
+  async ({ name, currentPassword, newPassword }, thunkAPI) => {
+    try {
+      const { data } = await axios.put(
+        `${API_BASE_URL}/api/users/profile`,
+        { name, currentPassword, newPassword },
+        { withCredentials: true }
+      );
 
-    // Update the user data in localStorage if it changes
-    localStorage.setItem('user', JSON.stringify(data));
-
-    return data;
+      localStorage.setItem('user', JSON.stringify(data));
+      return data;
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message: string }>;
+      return thunkAPI.rejectWithValue(
+        axiosError.response?.data?.message || axiosError.message || 'Profile update failed'
+      );
+    }
   }
 );
 
@@ -102,7 +122,7 @@ const authSlice = createSlice({
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Login failed';
+        state.error = action.payload || action.error.message || 'Login failed';
       })
       .addCase(register.pending, (state) => {
         state.loading = true;
@@ -114,7 +134,7 @@ const authSlice = createSlice({
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Registration failed';
+        state.error = action.payload || action.error.message || 'Registration failed';
       })
       .addCase(logout.pending, (state) => {
         state.loading = true;
@@ -138,7 +158,7 @@ const authSlice = createSlice({
       })
       .addCase(updateProfile.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Profile update failed';
+        state.error = action.payload || action.error.message || 'Profile update failed';
       });
   },
 });
